@@ -115,11 +115,8 @@
     
     <div class="card">
         <h2>1. Connect Wallet</h2>
-        <p class="small">Connect your wallet and enter the contract address (deploy via Remix first).</p>
+        <p class="small">Connect your wallet to Base Sepolia to interact with the contract.</p>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
-        
-        <label>Contract Address:</label>
-        <input type="text" id="contractAddress" placeholder="0x..." onchange="loadContract()">
         <div id="connectionInfo"></div>
     </div>
 
@@ -170,29 +167,29 @@
             "event FundsReleased(uint256 indexed commitmentId, address indexed depositor, uint256 amount)"
         ];
 
+        const CONTRACT_ADDRESS = '0x8fc59b7e971A2Bd2AAdF7aaDC2aBB0279fCE7d29';
         let provider, signer, contract;
 
         async function connectWallet() {
-            if (!window.ethereum) {
-                alert("Please install MetaMask!");
+            const walletProvider = window.rabby || window.ethereum;
+            if (!walletProvider) {
+                alert("No wallet detected. Please install Rabby or MetaMask.");
                 return;
             }
             
             try {
-                provider = new ethers.BrowserProvider(window.ethereum);
+                provider = new ethers.BrowserProvider(walletProvider);
                 await provider.send("eth_requestAccounts", []);
                 signer = await provider.getSigner();
                 const address = await signer.getAddress();
                 const network = await provider.getNetwork();
                 
+                const walletName = window.rabby ? 'Rabby' : (walletProvider.isMetaMask ? 'MetaMask' : 'Wallet');
                 document.getElementById('connectionStatus').textContent = 
-                    `${address.slice(0,6)}...${address.slice(-4)} (${network.name})`;
+                    `${walletName}: ${address.slice(0,6)}...${address.slice(-4)} (${network.name})`;
                 document.getElementById('connectionStatus').className = 'connected';
                 
-                // Check if contract address is already set
-                if (document.getElementById('contractAddress').value) {
-                    loadContract();
-                }
+                loadContract();
             } catch (err) {
                 console.error(err);
                 showStatus('connectionInfo', 'error', err.message);
@@ -200,14 +197,10 @@
         }
 
         function loadContract() {
-            const addr = document.getElementById('contractAddress').value;
-            if (addr && ethers.isAddress(addr)) {
-                contract = new ethers.Contract(addr, ABI, signer);
-                showStatus('connectionInfo', 'success', 'Contract loaded!');
-                document.getElementById('createBtn').disabled = false;
-                document.getElementById('signBtn').disabled = false;
-                document.getElementById('burnBtn').disabled = false;
-            }
+            contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, signer);
+            showStatus('connectionInfo', 'success', 'Connected to contract');
+            document.getElementById('createBtn').disabled = false;
+            document.getElementById('signBtn').disabled = false;
         }
 
         function updateHash() {
