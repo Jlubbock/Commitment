@@ -1,6 +1,0 @@
-[build]
-workDir = "backend"
-
-[deploy]
-startCommand = "node server.js"
-
