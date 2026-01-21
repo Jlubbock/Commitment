@@ -10,185 +10,209 @@
         }
         body {
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #0a0a0a;
-            color: #e0e0e0;
+            font-size: 12px;
+            margin: 0;
+            padding: 12px;
+            background: #fff;
+            color: #222;
         }
-        h1, h2 {
-            color: #fff;
+        h1 {
+            font-size: 16px;
+            margin: 0 0 4px 0;
+        }
+        h2 {
+            font-size: 13px;
+            margin: 0 0 6px 0;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 12px;
+            align-items: flex-start;
         }
         .card {
-            background: #1a1a1a;
-            border: 1px solid #333;
-            border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
+            background: #fafafa;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 10px;
+            flex: 1;
+            min-width: 220px;
         }
         label {
-            display: block;
-            margin: 10px 0 5px;
+            display: inline-block;
+            margin: 4px 8px 2px 0;
             font-weight: 500;
         }
         input, textarea {
-            width: 100%;
-            padding: 10px;
-            border: 1px solid #444;
-            border-radius: 4px;
-            background: #0a0a0a;
-            color: #fff;
-            font-size: 14px;
+            padding: 4px 6px;
+            border: 1px solid #ccc;
+            border-radius: 3px;
+            background: #fff;
+            color: #222;
+            font-size: 11px;
+            margin-right: 6px;
         }
         input:focus, textarea:focus {
             outline: none;
             border-color: #646cff;
         }
+        textarea {
+            width: 100%;
+        }
         button {
             background: #646cff;
             color: white;
             border: none;
-            padding: 12px 24px;
-            border-radius: 4px;
+            padding: 4px 10px;
+            border-radius: 3px;
             cursor: pointer;
-            font-size: 14px;
-            margin-top: 15px;
+            font-size: 11px;
+            margin: 4px 4px 4px 0;
         }
         button:hover {
             background: #747bff;
         }
         button:disabled {
-            background: #444;
+            background: #aaa;
             cursor: not-allowed;
         }
         .status {
-            padding: 10px;
-            border-radius: 4px;
-            margin-top: 10px;
+            padding: 4px 8px;
+            border-radius: 3px;
+            margin-top: 4px;
+            font-size: 11px;
         }
         .status.success {
-            background: #1a3a1a;
-            border: 1px solid #2d5a2d;
+            background: #d4edda;
+            border: 1px solid #a3d9a5;
+            color: #155724;
         }
         .status.error {
-            background: #3a1a1a;
-            border: 1px solid #5a2d2d;
+            background: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
         }
         .status.info {
-            background: #1a1a3a;
-            border: 1px solid #2d2d5a;
+            background: #d1ecf1;
+            border: 1px solid #bee5eb;
+            color: #0c5460;
         }
         .hash-preview {
             font-family: monospace;
-            font-size: 12px;
-            color: #888;
+            font-size: 10px;
+            color: #666;
             word-break: break-all;
-            margin-top: 5px;
+            margin-top: 2px;
         }
         .small {
-            font-size: 12px;
-            color: #888;
+            font-size: 10px;
+            color: #666;
         }
         #connectionStatus {
             position: fixed;
-            top: 10px;
-            right: 10px;
-            padding: 8px 16px;
-            border-radius: 4px;
-            font-size: 12px;
+            top: 6px;
+            right: 6px;
+            padding: 4px 10px;
+            border-radius: 3px;
+            font-size: 10px;
         }
         .connected {
-            background: #1a3a1a;
-            color: #4ade80;
+            background: #d4edda;
+            color: #155724;
         }
         .disconnected {
-            background: #3a1a1a;
-            color: #f87171;
+            background: #f8d7da;
+            color: #721c24;
         }
         .commitment-item {
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 12px;
-            background: #0a0a0a;
-            border: 1px solid #333;
-            border-radius: 4px;
-            margin: 8px 0;
+            padding: 6px 8px;
+            background: #fff;
+            border: 1px solid #ddd;
+            border-radius: 3px;
+            margin: 4px 0;
             cursor: pointer;
             transition: border-color 0.2s;
+            font-size: 11px;
         }
         .commitment-item:hover {
             border-color: #646cff;
         }
         .commitment-item .role {
-            font-size: 11px;
-            padding: 2px 8px;
-            border-radius: 3px;
+            font-size: 9px;
+            padding: 1px 5px;
+            border-radius: 2px;
             text-transform: uppercase;
         }
         .commitment-item .role.depositor {
-            background: #1a3a1a;
-            color: #4ade80;
+            background: #d4edda;
+            color: #155724;
         }
         .commitment-item .role.partner {
-            background: #1a1a3a;
-            color: #818cf8;
+            background: #d1ecf1;
+            color: #0c5460;
         }
         .no-commitments {
-            color: #666;
+            color: #888;
             font-style: italic;
+        }
+        #commitmentDetails p {
+            margin: 2px 0;
+        }
+        
+        .header {
+            margin-bottom: 8px;
+        }
+        .header p {
+            margin: 0;
+            font-size: 11px;
+            color: #555;
         }
     </style>
 </head>
 <body>
     <div id="connectionStatus" class="disconnected">Not Connected</div>
     
-    <h1>🔒 Commitment Contract</h1>
-    <p>Create binding commitments with financial stakes. Funds are released only if both you and your accountability partner agree you completed the commitment.</p>
+    <div class="header">
+        <h1>🔒 Commitment Contract</h1>
+        <p>Binding commitments with financial stakes. Funds released when both parties sign.</p>
+    </div>
     
-    <div class="card">
-        <h2>1. Connect Wallet</h2>
-        <p class="small">Connect your wallet to Base Sepolia to interact with the contract.</p>
-        <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
-        <div id="connectionInfo"></div>
-    </div>
+    <div class="container">
+        <div class="card">
+            <h2>Connect</h2>
+            <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
+            <div id="connectionInfo"></div>
+        </div>
 
-    <div class="card" id="yourCommitmentsCard" style="display: none;">
-        <h2>Your Commitments</h2>
-        <div id="yourCommitmentsList"></div>
-    </div>
+        <div class="card" id="yourCommitmentsCard" style="display: none;">
+            <h2>Your Commitments</h2>
+            <div id="yourCommitmentsList"></div>
+        </div>
 
-    <div class="card">
-        <h2>2. Create Commitment</h2>
-        
-        <label>Your Commitment:</label>
-        <textarea id="commitmentText" rows="3" placeholder="I will ship my project by February 28th, 2026" oninput="updateHash()"></textarea>
-        <div class="hash-preview">Hash: <span id="hashPreview">-</span></div>
-        
-        <label>Partner's Wallet Address:</label>
-        <input type="text" id="partnerAddress" placeholder="0x...">
-        
-        <label>Deadline:</label>
-        <input type="datetime-local" id="deadline">
-        
-        <label>Stake Amount (ETH):</label>
-        <input type="number" id="stakeAmount" step="0.001" value="0.01" placeholder="0.1">
-        
-        <button id="createBtn" onclick="createCommitment()" disabled>Create Commitment</button>
-        <div id="createStatus"></div>
-    </div>
+        <div class="card">
+            <h2>Create</h2>
+            <textarea id="commitmentText" rows="2" placeholder="I will ship my project by Feb 28th" oninput="updateHash()"></textarea>
+            <div class="hash-preview">Hash: <span id="hashPreview">-</span></div>
+            <div>
+                <label>Partner:</label><input type="text" id="partnerAddress" placeholder="0x..." style="width:140px;">
+                <label>Deadline:</label><input type="datetime-local" id="deadline" style="width:150px;">
+                <label>ETH:</label><input type="number" id="stakeAmount" step="0.001" value="0.01" style="width:70px;">
+            </div>
+            <button id="createBtn" onclick="createCommitment()" disabled>Create</button>
+            <div id="createStatus"></div>
+        </div>
 
-    <div class="card">
-        <h2>3. Manage Commitment</h2>
-        
-        <label>Commitment ID:</label>
-        <input type="number" id="commitmentId" placeholder="0">
-        <button onclick="loadCommitment()">Load</button>
-        
-        <div id="commitmentDetails" style="margin-top: 15px;"></div>
-        
-        <button id="signBtn" onclick="signForRelease()" disabled>Sign for Release</button>
-        <div id="manageStatus"></div>
+        <div class="card">
+            <h2>Manage</h2>
+            <label>ID:</label><input type="number" id="commitmentId" placeholder="0" style="width:50px;">
+            <button onclick="loadCommitment()">Load</button>
+            <button id="signBtn" onclick="signForRelease()" disabled>Sign</button>
+            <div id="commitmentDetails" style="margin-top: 6px;"></div>
+            <div id="manageStatus"></div>
+        </div>
     </div>
 
     <script>
