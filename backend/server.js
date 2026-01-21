@@ -1,18 +1,18 @@
 const express = require('express');
+const path = require('path');
 const { keccak256, toUtf8Bytes } = require('ethers');
 const fs = require('fs');
 
 const app = express();
 app.use(express.json());
-app.use((_, res, next) => { 
-    res.header('Access-Control-Allow-Origin', '*'); 
-    res.header('Access-Control-Allow-Headers', '*'); 
-    res.header('Access-Control-Allow-Methods', '*');
-    next(); 
-});
-app.options('*', (_, res) => res.sendStatus(200));
 
-const DATA = './messages.json';
+// Serve static frontend
+app.use(express.static(path.join(__dirname, 'public')));
+
+// Use Railway volume if available, otherwise local file
+const DATA = process.env.RAILWAY_VOLUME_MOUNT_PATH 
+    ? `${process.env.RAILWAY_VOLUME_MOUNT_PATH}/messages.json`
+    : './messages.json';
 const load = () => { try { return JSON.parse(fs.readFileSync(DATA)); } catch { return {}; } };
 const save = d => fs.writeFileSync(DATA, JSON.stringify(d, null, 2));
 
@@ -30,5 +30,11 @@ app.get('/api/message/:id', (req, res) => {
     res.json({ text: load()[req.params.id] || null });
 });
 
-app.listen(3001, () => console.log('http://localhost:3001'));
+// Serve frontend for all other routes
+app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'public/ui.html'));
+});
+
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`http://localhost:${PORT}`));
 
