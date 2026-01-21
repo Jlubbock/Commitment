@@ -105,6 +105,39 @@
             background: #3a1a1a;
             color: #f87171;
         }
+        .commitment-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px;
+            background: #0a0a0a;
+            border: 1px solid #333;
+            border-radius: 4px;
+            margin: 8px 0;
+            cursor: pointer;
+            transition: border-color 0.2s;
+        }
+        .commitment-item:hover {
+            border-color: #646cff;
+        }
+        .commitment-item .role {
+            font-size: 11px;
+            padding: 2px 8px;
+            border-radius: 3px;
+            text-transform: uppercase;
+        }
+        .commitment-item .role.depositor {
+            background: #1a3a1a;
+            color: #4ade80;
+        }
+        .commitment-item .role.partner {
+            background: #1a1a3a;
+            color: #818cf8;
+        }
+        .no-commitments {
+            color: #666;
+            font-style: italic;
+        }
     </style>
 </head>
 <body>
@@ -118,6 +151,11 @@
         <p class="small">Connect your wallet to Base Sepolia to interact with the contract.</p>
         <button id="connectBtn" onclick="connectWallet()">Connect Wallet</button>
         <div id="connectionInfo"></div>
+    </div>
+
+    <div class="card" id="yourCommitmentsCard" style="display: none;">
+        <h2>Your Commitments</h2>
+        <div id="yourCommitmentsList"></div>
     </div>
 
     <div class="card">
@@ -168,6 +206,7 @@
         ];
 
         const CONTRACT_ADDRESS = '0x8fc59b7e971A2Bd2AAdF7aaDC2aBB0279fCE7d29';
+        const API_URL = 'http://localhost:3001';
         let provider, signer, contract;
 
         async function connectWallet() {
@@ -201,6 +240,73 @@
             showStatus('connectionInfo', 'success', 'Connected to contract');
             document.getElementById('createBtn').disabled = false;
             document.getElementById('signBtn').disabled = false;
+            loadUserCommitments();
+        }
+
+        async function loadUserCommitments() {
+            const userAddress = (await signer.getAddress()).toLowerCase();
+            const card = document.getElementById('yourCommitmentsCard');
+            const list = document.getElementById('yourCommitmentsList');
+            
+            card.style.display = 'block';
+            list.innerHTML = '<span class="small">Loading...</span>';
+            
+            try {
+                // Iterate through all commitments (avoids eth_getLogs which public RPCs throttle)
+                const totalCommitments = Number(await contract.nextCommitmentId());
+                const userCommitments = [];
+                
+                for (let id = 0; id < totalCommitments; id++) {
+                    const c = await contract.commitments(id);
+                    const depositor = c.depositor.toLowerCase();
+                    const partner = c.partner.toLowerCase();
+                    
+                    if (depositor === userAddress) {
+                        userCommitments.push({ id, commitment: c, role: 'depositor' });
+                    } else if (partner === userAddress) {
+                        userCommitments.push({ id, commitment: c, role: 'partner' });
+                    }
+                }
+                
+                if (userCommitments.length === 0) {
+                    list.innerHTML = '<p class="no-commitments">No commitments found</p>';
+                    return;
+                }
+                
+                // Build the list
+                let html = '';
+                for (const { id, commitment: c, role } of userCommitments) {
+                    const locked = await contract.isLocked(id);
+                    
+                    let statusIcon;
+                    if (c.released) statusIcon = '✅';
+                    else if (locked) statusIcon = '🔒';
+                    else statusIcon = '⏳';
+                    
+                    const amount = ethers.formatEther(c.amount);
+                    const deadline = new Date(Number(c.deadline) * 1000).toLocaleDateString();
+                    
+                    html += `
+                        <div class="commitment-item" onclick="selectCommitment(${id})">
+                            <div>
+                                <strong>#${id}</strong> ${statusIcon}
+                                <span class="small" style="margin-left: 8px;">${amount} ETH · Due ${deadline}</span>
+                            </div>
+                            <span class="role ${role}">${role}</span>
+                        </div>
+                    `;
+                }
+                list.innerHTML = html;
+            } catch (err) {
+                console.error(err);
+                list.innerHTML = `<p style="color: #f87171;">Error loading commitments: ${err.message}</p>`;
+            }
+        }
+
+        function selectCommitment(id) {
+            document.getElementById('commitmentId').value = id;
+            loadCommitment();
+            document.getElementById('commitmentId').scrollIntoView({ behavior: 'smooth', block: 'center' });
         }
 
         function updateHash() {
@@ -248,7 +354,16 @@
                         if (parsed.name === 'CommitmentCreated') {
                             const id = parsed.args[0];
                             document.getElementById('commitmentId').value = id.toString();
+                            // Save message text to server
+                            try {
+                                await fetch(`${API_URL}/api/message/${id}`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ text, expectedHash: commitmentHash })
+                                });
+                            } catch (e) { console.warn('Failed to save message:', e); }
                             showStatus('createStatus', 'success', `Commitment #${id} created! TX: ${receipt.hash}`);
+                            loadUserCommitments();
                             return;
                         }
                     } catch {}
@@ -268,6 +383,14 @@
                 const timeLeft = await contract.timeRemaining(id);
                 const locked = await contract.isLocked(id);
                 
+                // Fetch stored message text
+                let messageText = null;
+                try {
+                    const res = await fetch(`${API_URL}/api/message/${id}`);
+                    const data = await res.json();
+                    messageText = data.text;
+                } catch (e) { console.warn('Failed to fetch message:', e); }
+                
                 let status;
                 if (c.released) {
                     status = '✅ Released';
@@ -279,6 +402,7 @@
                 
                 const details = `
                     <p><strong>Status:</strong> ${status}</p>
+                    ${messageText ? `<p><strong>Commitment:</strong> ${messageText}</p>` : ''}
                     <p><strong>Depositor:</strong> ${c.depositor}</p>
                     <p><strong>Partner:</strong> ${c.partner}</p>
                     <p><strong>Amount:</strong> ${ethers.formatEther(c.amount)} ETH</p>
@@ -286,6 +410,8 @@
                     <p><strong>Time Remaining:</strong> ${formatTime(Number(timeLeft))}</p>
                     <p><strong>Depositor Signed:</strong> ${c.depositorSigned ? '✅' : '❌'}</p>
                     <p><strong>Partner Signed:</strong> ${c.partnerSigned ? '✅' : '❌'}</p>
+                    <p><strong>Commitment Hash:</strong></p>
+                    <div class="hash-preview">${c.commitmentHash}</div>
                 `;
                 document.getElementById('commitmentDetails').innerHTML = details;
                 
