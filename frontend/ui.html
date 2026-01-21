@@ -206,6 +206,7 @@
         ];
 
         const CONTRACT_ADDRESS = '0x8fc59b7e971A2Bd2AAdF7aaDC2aBB0279fCE7d29';
+        const API_URL = 'http://localhost:3001';
         let provider, signer, contract;
 
         async function connectWallet() {
@@ -243,7 +244,7 @@
         }
 
         async function loadUserCommitments() {
-            const userAddress = await signer.getAddress();
+            const userAddress = (await signer.getAddress()).toLowerCase();
             const card = document.getElementById('yourCommitmentsCard');
             const list = document.getElementById('yourCommitmentsList');
             
@@ -251,39 +252,30 @@
             list.innerHTML = '<span class="small">Loading...</span>';
             
             try {
-                // RPC limits to 100k blocks, query from recent history
-                const currentBlock = await provider.getBlockNumber();
-                const fromBlock = Math.max(0, currentBlock - 90000);
+                // Iterate through all commitments (avoids eth_getLogs which public RPCs throttle)
+                const totalCommitments = Number(await contract.nextCommitmentId());
+                const userCommitments = [];
                 
-                // Query events where user is depositor
-                const asDepositorFilter = contract.filters.CommitmentCreated(null, userAddress, null);
-                const asDepositorEvents = await contract.queryFilter(asDepositorFilter, fromBlock);
-                
-                // Query events where user is partner
-                const asPartnerFilter = contract.filters.CommitmentCreated(null, null, userAddress);
-                const asPartnerEvents = await contract.queryFilter(asPartnerFilter, fromBlock);
-                
-                // Combine and dedupe
-                const commitmentMap = new Map();
-                for (const e of asDepositorEvents) {
-                    commitmentMap.set(e.args[0].toString(), { event: e, role: 'depositor' });
-                }
-                for (const e of asPartnerEvents) {
-                    const id = e.args[0].toString();
-                    if (!commitmentMap.has(id)) {
-                        commitmentMap.set(id, { event: e, role: 'partner' });
+                for (let id = 0; id < totalCommitments; id++) {
+                    const c = await contract.commitments(id);
+                    const depositor = c.depositor.toLowerCase();
+                    const partner = c.partner.toLowerCase();
+                    
+                    if (depositor === userAddress) {
+                        userCommitments.push({ id, commitment: c, role: 'depositor' });
+                    } else if (partner === userAddress) {
+                        userCommitments.push({ id, commitment: c, role: 'partner' });
                     }
                 }
                 
-                if (commitmentMap.size === 0) {
+                if (userCommitments.length === 0) {
                     list.innerHTML = '<p class="no-commitments">No commitments found</p>';
                     return;
                 }
                 
-                // Fetch current state for each commitment
+                // Build the list
                 let html = '';
-                for (const [id, { event, role }] of commitmentMap) {
-                    const c = await contract.commitments(id);
+                for (const { id, commitment: c, role } of userCommitments) {
                     const locked = await contract.isLocked(id);
                     
                     let statusIcon;
@@ -362,6 +354,14 @@
                         if (parsed.name === 'CommitmentCreated') {
                             const id = parsed.args[0];
                             document.getElementById('commitmentId').value = id.toString();
+                            // Save message text to server
+                            try {
+                                await fetch(`${API_URL}/api/message/${id}`, {
+                                    method: 'POST',
+                                    headers: { 'Content-Type': 'application/json' },
+                                    body: JSON.stringify({ text, expectedHash: commitmentHash })
+                                });
+                            } catch (e) { console.warn('Failed to save message:', e); }
                             showStatus('createStatus', 'success', `Commitment #${id} created! TX: ${receipt.hash}`);
                             loadUserCommitments();
                             return;
@@ -383,6 +383,14 @@
                 const timeLeft = await contract.timeRemaining(id);
                 const locked = await contract.isLocked(id);
                 
+                // Fetch stored message text
+                let messageText = null;
+                try {
+                    const res = await fetch(`${API_URL}/api/message/${id}`);
+                    const data = await res.json();
+                    messageText = data.text;
+                } catch (e) { console.warn('Failed to fetch message:', e); }
+                
                 let status;
                 if (c.released) {
                     status = '✅ Released';
@@ -394,6 +402,7 @@
                 
                 const details = `
                     <p><strong>Status:</strong> ${status}</p>
+                    ${messageText ? `<p><strong>Commitment:</strong> ${messageText}</p>` : ''}
                     <p><strong>Depositor:</strong> ${c.depositor}</p>
                     <p><strong>Partner:</strong> ${c.partner}</p>
                     <p><strong>Amount:</strong> ${ethers.formatEther(c.amount)} ETH</p>
@@ -401,6 +410,8 @@
                     <p><strong>Time Remaining:</strong> ${formatTime(Number(timeLeft))}</p>
                     <p><strong>Depositor Signed:</strong> ${c.depositorSigned ? '✅' : '❌'}</p>
                     <p><strong>Partner Signed:</strong> ${c.partnerSigned ? '✅' : '❌'}</p>
+                    <p><strong>Commitment Hash:</strong></p>
+                    <div class="hash-preview">${c.commitmentHash}</div>
                 `;
                 document.getElementById('commitmentDetails').innerHTML = details;
                 
